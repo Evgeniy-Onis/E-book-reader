@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Книги для ридера</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#a15c3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{--paper:#f6f1e9;--card:#fff;--ink:#2b2420;--muted:#8a7f72;--accent:#a15c3e;--accent-dark:#7e4630;--line:#e8e0d4;--bad:#c0563f;--warn:#b8860b;--ok:#4c8c5c;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:20px 14px 48px;}
+  .wrap{max-width:480px;margin:0 auto;}
+  h1{font-size:20px;text-align:center;margin:0 0 18px;}
+  .card{background:var(--card);border-radius:16px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(43,36,32,.06);border:1px solid var(--line);}
+  .card-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;}
+  input[type=file]{width:100%;}
+  input[type=text],input[type=number],select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:var(--paper);color:var(--ink);margin-top:6px;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  label.row{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:14px;}
+  label.row input{width:18px;height:18px;accent-color:var(--accent);flex:none;}
+  .field{margin-top:12px;font-size:14px;}
+  .two{display:flex;gap:10px;} .two>div{flex:1;}
+  button{font:inherit;border:none;border-radius:10px;padding:12px 16px;font-weight:600;font-size:14px;cursor:pointer;width:100%;margin-top:10px;background:var(--accent);color:#fff;}
+  button.secondary{background:transparent;color:var(--accent-dark);border:1px solid var(--line);}
+  button.danger{background:transparent;color:var(--bad);border:1px solid var(--bad);}
+  button:disabled{opacity:.45;cursor:default;}
+  .navrow{display:flex;gap:10px;} .navrow button{margin-top:8px;}
+  progress{width:100%;margin-top:12px;accent-color:var(--accent);display:none;}
+  .muted{font-size:12px;color:var(--muted);white-space:pre-line;}
+  .info{font-size:13px;margin-top:8px;white-space:pre-line;}
+  .estimate{font-size:13px;margin-top:10px;white-space:pre-line;}
+  .estimate.warn,.info.warn{color:var(--warn);} .estimate.bad,.info.bad{color:var(--bad);font-weight:600;} .info.ok{color:var(--ok);}
+  #status{font-size:13px;margin-top:10px;white-space:pre-line;}
+  canvas#preview{width:100%;height:auto;image-rendering:pixelated;border:1px solid var(--line);border-radius:6px;background:#fff;display:block;}
+  pre#textPreview{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:10px 0 0;}
+  .hidden{display:none !important;}
+  .radio{display:block;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:14px;cursor:pointer;}
+  .radio input{margin-right:8px;accent-color:var(--accent);}
+  .radio small{display:block;color:var(--muted);margin:4px 0 0 26px;font-size:12px;}
+  .radio.sel{border-color:var(--accent);background:#fbf3ec;}
+  details{font-size:13px;margin-top:12px;color:var(--muted);} summary{cursor:pointer;color:var(--accent-dark);font-weight:600;}
+  details p{margin:8px 0;line-height:1.5;}
+  a.link{display:block;text-align:center;margin-top:10px;color:var(--accent-dark);font-weight:600;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📖 Книги для ридера</h1>
+
+  <div class="card">
+    <div class="card-label">1. Выберите книгу</div>
+    <input type="file" id="fileInput" accept=".pdf,.epub,.fb2,.pgb,application/pdf,application/epub+zip">
+    <div id="fileInfo" class="info"></div>
+  </div>
+
+  <!-- ===== только для PDF ===== -->
+  <div class="card hidden" id="pdfCard">
+    <div class="card-label">2. Как преобразовать PDF</div>
+    <label class="radio" id="radText"><input type="radio" name="outMode" value="text">Текст (FB2) — крупный шрифт ридера
+      <small>Для PDF с текстовым слоем: текст достаётся из файла, колонтитулы и номера страниц убираются, строки склеиваются в абзацы. Картинки и формулы пропускаются.</small></label>
+    <label class="radio" id="radImg"><input type="radio" name="outMode" value="img">Картинки страниц (.pgb)
+      <small>Для сканов, схем, формул и сложной вёрстки: страница показывается как рисунок.</small></label>
+    <div id="recommend" class="info"></div>
+
+    <div class="two">
+      <div class="field">С страницы <input type="number" id="rangeFrom" min="1" value="1"></div>
+      <div class="field">По страницу <input type="number" id="rangeTo" min="1" value="1"></div>
+    </div>
+    <div class="muted" style="margin-top:6px">Большую книгу можно загрузить частями (ограничение памяти ридера).</div>
+
+    <!-- настройки текста -->
+    <div id="textOptions" class="hidden">
+      <label class="row"><input type="checkbox" id="removeHeaders" checked> Убирать колонтитулы и номера страниц</label>
+      <label class="row"><input type="checkbox" id="dehyphenate" checked> Склеивать переносы слов</label>
+      <div id="textStats" class="info"></div>
+      <pre id="textPreview"></pre>
+    </div>
+
+    <!-- настройки картинок -->
+    <div id="imgOptions" class="hidden">
+      <div class="field">Масштаб на экране
+        <select id="layout">
+          <option value="width" selected>По ширине текста (крупно, страница на нескольких экранах)</option>
+          <option value="page">Страница целиком (мелко, один экран)</option>
+        </select>
+      </div>
+      <div class="field" id="zoomField">Увеличение (для мелкого шрифта)
+        <select id="zoom">
+          <option value="1" selected>100%</option><option value="1.25">125%</option>
+          <option value="1.5">150%</option><option value="2">200%</option>
+        </select>
+        <div class="muted">больше 100% — страница режется ещё и по горизонтали; экранов и размер файла растут</div>
+      </div>
+      <label class="row"><input type="checkbox" id="autoCrop" checked> Обрезать поля (крупнее текст)</label>
+      <div class="field">Режим картинки
+        <select id="mode">
+          <option value="auto" selected>Авто: текст чётко, картинки и цвет — «тон + цвет»</option>
+          <option value="tone">Всё «тон + цвет» (нейтральное ч/б, цветное — красный/чёрный/белый)</option>
+          <option value="lum">По яркости, как обложки в прошивке (красный — любой средний тон)</option>
+          <option value="palette">Палитра по цвету, как в библиотеках e-paper</option>
+          <option value="photo">Фото чёрно-белое (без красного)</option>
+          <option value="text">Только текст (чёткий порог)</option>
+        </select>
+      </div>
+      <div class="field">Жирность текста (порог): <b id="thresholdVal">165</b>
+        <input type="range" id="threshold" min="90" max="230" step="5" value="165">
+      </div>
+      <label class="row"><input type="checkbox" id="useRed" checked> Красный текст и заголовки сохранять красными (по оттенку)</label>
+
+      <canvas id="preview" width="400" height="300" style="margin-top:12px"></canvas>
+      <div class="navrow">
+        <button class="secondary" id="prevBtn" type="button">◀ Назад</button>
+        <button class="secondary" id="nextBtn" type="button">Вперёд ▶</button>
+      </div>
+      <div id="previewInfo" class="muted" style="margin-top:6px;text-align:center"></div>
+      <div id="estimate" class="estimate"></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="convertCard">
+    <div class="card-label">3. Конвертация</div>
+    <button id="btnConvert" type="button" disabled>Конвертировать</button>
+    <button id="btnCancel" type="button" class="secondary hidden">Отмена</button>
+    <progress id="progress" value="0" max="1"></progress>
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">На ридер</div>
+    <div class="field">IP ридера
+      <input type="text" id="ipInput" value="192.168.4.1" inputmode="decimal" autocomplete="off">
+    </div>
+    <div id="readyInfo" class="info"></div>
+    <button id="btnUpload" type="button" disabled>Загрузить на ридер</button>
+    <button id="btnDownload" type="button" class="secondary" disabled>Скачать файл</button>
+    <details>
+      <summary>Как загрузить правильно</summary>
+      <p>1. Подготовьте файл (для PDF — конвертация идёт без сети). 2. Подключите телефон к Wi-Fi ридера (по умолчанию «EBook-Reader»). 3. Нажмите «Загрузить на ридер» — откроется новая вкладка; браузер может предупредить, что форма «не защищена» (ридер работает по http) — подтвердите. Дождитесь «Книга загружена».</p>
+      <p>Телефон не видит ридер? Многие Android-телефоны сами уходят с Wi-Fi без интернета на мобильную сеть — выберите «Оставаться на этой сети» или временно выключите мобильные данные.</p>
+      <p>Не получается? Нажмите «Скачать файл», подключитесь к ридеру, откройте <b>http://192.168.4.1</b> и загрузите файл через его страницу.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Панель ридера</div>
+    <button id="btnStatus" type="button" class="secondary" style="margin-top:0">Обновить статус ридера</button>
+    <div id="devStatus" class="info">Подключитесь к Wi-Fi ридера и нажмите кнопку.</div>
+    <div class="two">
+      <div class="field"><input type="number" id="gotoInput" min="1" placeholder="Страница"></div>
+      <div class="field"><button id="btnGoto" type="button" class="secondary" style="margin-top:6px">Перейти</button></div>
+    </div>
+    <button id="btnDelete" type="button" class="danger">Удалить текущую книгу</button>
+    <a class="link" id="openPanel" href="http://192.168.4.1/" target="_blank" rel="noopener">Открыть страницу ридера ↗</a>
+    <div class="muted" style="margin-top:6px">Если статус не читается — браузер блокирует запросы из защищённого приложения к устройству по http. Тогда пользуйтесь страницей ридера по ссылке: там то же самое.</div>
+  </div>
+
+  <!-- Скрытая форма: настоящий submit (не fetch), чтобы не упереться в блокировку mixed content.
+       Файл подставляется в hiddenFile через DataTransfer. -->
+  <form id="uploadForm" method="POST" enctype="multipart/form-data" target="_blank" style="display:none">
+    <input type="file" name="file" id="hiddenFile">
+  </form>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
