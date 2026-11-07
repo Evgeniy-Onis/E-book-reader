@@ -1,6 +1,6 @@
 // Версию увеличивайте при каждом обновлении файлов приложения — иначе телефоны
 // будут показывать старую закэшированную версию.
-const CACHE_NAME = 'pgb-converter-v8';
+const CACHE_NAME = 'pgb-converter-v10';
 
 const PRECACHE_URLS = [
   './',
